@@ -4,20 +4,16 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
+import json
 import time
 
 def fetch_rss_news(url):
-    """Fetch news from RSS feeds"""
+    """Fetch news from RSS feeds and save to JSON"""
     try:
         response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
         soup = BeautifulSoup(response.content, 'xml')
         items = soup.find_all('item')
-        news_list = []
-        for item in items:
-            title = item.title.text
-            link = item.link.text
-            news_list.append({'title': title, 'link': link})
-        return news_list
+        return [{'title': item.title.text, 'link': item.link.text} for item in items]
     except Exception as e:
         print(f"Error fetching RSS: {e}")
         return []
@@ -27,13 +23,8 @@ def fetch_static_news(url):
     try:
         response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
         soup = BeautifulSoup(response.content, 'html.parser')
-        articles = soup.find_all('a')[:10]  # Adjust based on site structure
-        news_list = []
-        for article in articles:
-            title = article.get_text(strip=True)
-            link = article['href'] if 'http' in article['href'] else url + article['href']
-            news_list.append({'title': title, 'link': link})
-        return news_list
+        articles = soup.find_all('a')[:10]
+        return [{'title': a.get_text(strip=True), 'link': a['href']} for a in articles if a.get_text(strip=True)]
     except Exception as e:
         print(f"Error fetching static news: {e}")
         return []
@@ -44,28 +35,19 @@ def fetch_dynamic_news(url):
         options = Options()
         options.add_argument('--headless')
         options.add_argument('--disable-gpu')
-        options.add_argument('--no-sandbox')
-        options.add_argument('--enable-unsafe-swiftshader')
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-        
         driver.get(url)
-        time.sleep(5)  # Wait for JavaScript to load
+        time.sleep(5)
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         driver.quit()
-        
-        articles = soup.find_all('a')[:10]  # Adjust based on site structure
-        news_list = []
-        for article in articles:
-            title = article.get_text(strip=True)
-            link = article['href'] if 'http' in article['href'] else url + article['href']
-            news_list.append({'title': title, 'link': link})
-        return news_list
+        articles = soup.find_all('a')[:10]
+        return [{'title': a.get_text(strip=True), 'link': a['href']} for a in articles if a.get_text(strip=True)]
     except Exception as e:
         print(f"Error fetching dynamic news: {e}")
         return []
 
-def get_news():
-    """Fetch news from multiple sources"""
+def scrape_news():
+    """Fetch news from multiple sources and save to a JSON file"""
     sources = {
         'rss': ['https://news.google.com/rss'],
         'static': ['https://www.bbc.com/news', 'https://www.thehindu.com/'],
@@ -82,9 +64,9 @@ def get_news():
             elif category == 'dynamic':
                 all_news.extend(fetch_dynamic_news(url))
     
-    return all_news
+    with open("news_data.json", "w", encoding="utf-8") as file:
+        json.dump(all_news, file)
+    print("News data saved!")
 
 if __name__ == "__main__":
-    news = get_news()
-    for item in news:
-        print(f"{item['title']}: {item['link']}")
+    scrape_news()

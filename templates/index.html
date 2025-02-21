@@ -1,17 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Localized News Aggregator</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Aggregator</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <h1>Latest News</h1>
-    {% for news in news %}
-        <div class="news-item">
-            <h2><a href="{{ news.link }}">{{ news.title }}</a></h2>
-            <p>{{ news.summary }}</p>
-            <p><strong>Category:</strong> {{ news.category }}</p>
-        </div>
-    {% endfor %}
+    <div id="news-container">
+        {% for item in news %}
+            <div class="news-item">
+                <a href="{{ item.link }}" target="_blank">{{ item.title }}</a>
+            </div>
+        {% endfor %}
+    </div>
 </body>
 </html>

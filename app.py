@@ -1,19 +1,24 @@
-from flask import Flask, render_template
-from news_scraper import get_news
-from news_processor import process_news
+from flask import Flask, render_template, jsonify
+import json
 
 app = Flask(__name__)
 
+def load_news():
+    """Load news from JSON file"""
+    try:
+        with open('news_data.json', 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return []
+
 @app.route('/')
 def index():
-    raw_news = get_news()
-    
-    if not raw_news:
-        processed_news = []
-    else:
-        processed_news = [process_news(news) for news in raw_news if news]
+    news = load_news()
+    return render_template('index.html', news=news)
 
-    return render_template('index.html', news=processed_news)
+@app.route('/news')
+def get_news():
+    return jsonify(load_news())
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
